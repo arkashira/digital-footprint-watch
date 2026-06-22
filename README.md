@@ -1,12 +1,12 @@
-# Digital Footprint Watch – Platform Setup
+# Digital Footprint Watch
+A Python project for reputation analytics.
 
-This minimal project demonstrates a simple user sign‑up flow with email confirmation and login.
+## Usage
+1. Create an instance of `DigitalFootprintWatch`.
+2. Update the reputation score using `update_reputation_score`.
+3. Get reputation analytics using `get_reputation_analytics`.
+4. Customize analytics settings using `customize_analytics_settings`.
+5. Get analytics notifications using `get_analytics_notifications`.
 
-## Features
-
-- Sign up with email and password.
-- Simulated confirmation email with a token.
-- Confirm email to activate the account.
-- Login only after confirmation.
-
-## Running Tests
+## Testing
+Run tests using `pytest`.
