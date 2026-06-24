@@ -1,53 +1,25 @@
-from digital_footprint_watch import DigitalFootprintWatch, Alert, AWSIAMMock
-import json
+from digital_footprint_watch import DigitalFootprintWatch, ReputationAnalytics
 
-def test_rotate_secret():
-    aws_iam_mock = AWSIAMMock()
-    digital_footprint_watch = DigitalFootprintWatch(aws_iam_mock)
-    alert = Alert('repo', 'file_path', 'secret')
-    result = digital_footprint_watch.rotate_secret(alert)
-    assert result['new_secret'] == 'new_secret'
-    assert result['commit_message'] == 'Updated secret in file_path'
+def test_get_reputation_analytics():
+    watch = DigitalFootprintWatch()
+    analytics = watch.get_reputation_analytics()
+    assert analytics.score == 75
+    assert analytics.notifications == ["Your reputation score is above average"]
 
-def test_create_commit():
-    aws_iam_mock = AWSIAMMock()
-    digital_footprint_watch = DigitalFootprintWatch(aws_iam_mock)
-    alert = Alert('repo', 'file_path', 'secret')
-    new_secret = 'new_secret'
-    new_commit = digital_footprint_watch.create_commit(alert, new_secret)
-    assert new_commit == 'Updated file_path with new secret'
+def test_customize_analytics_settings():
+    watch = DigitalFootprintWatch()
+    watch.customize_analytics_settings("weekly", 60)
+    assert watch.analytics_settings["notification_frequency"] == "weekly"
+    assert watch.analytics_settings["score_threshold"] == 60
 
-def test_resolve_alert():
-    aws_iam_mock = AWSIAMMock()
-    digital_footprint_watch = DigitalFootprintWatch(aws_iam_mock)
-    alert = Alert('repo', 'file_path', 'secret')
-    new_secret = 'new_secret'
-    status = digital_footprint_watch.resolve_alert(alert, new_secret)
-    assert status == 'Resolved'
+def test_get_analytics_notifications_above_threshold():
+    watch = DigitalFootprintWatch()
+    watch.customize_analytics_settings("daily", 50)
+    notifications = watch.get_analytics_notifications()
+    assert notifications == ["Your reputation score is above average"]
 
-def test_rotate_secret_edge_case():
-    aws_iam_mock = AWSIAMMock()
-    digital_footprint_watch = DigitalFootprintWatch(aws_iam_mock)
-    alert = Alert('', '', '')
-    result = digital_footprint_watch.rotate_secret(alert)
-    assert result['new_secret'] == 'new_'
-    assert result['commit_message'] == 'Updated secret in '
-
-def test_main():
-    aws_iam_mock = AWSIAMMock()
-    digital_footprint_watch = DigitalFootprintWatch(aws_iam_mock)
-    alert = Alert('repo', 'file_path', 'secret')
-    result = digital_footprint_watch.rotate_secret(alert)
-    new_commit = digital_footprint_watch.create_commit(alert, result['new_secret'])
-    status = digital_footprint_watch.resolve_alert(alert, result['new_secret'])
-    assert json.loads(json.dumps({
-        'new_secret': result['new_secret'],
-        'commit_message': result['commit_message'],
-        'new_commit': new_commit,
-        'status': status
-    })) == {
-        'new_secret': 'new_secret',
-        'commit_message': 'Updated secret in file_path',
-        'new_commit': 'Updated file_path with new secret',
-        'status': 'Resolved'
-    }
+def test_get_analytics_notifications_below_threshold():
+    watch = DigitalFootprintWatch()
+    watch.customize_analytics_settings("daily", 80)
+    notifications = watch.get_analytics_notifications()
+    assert notifications == []
