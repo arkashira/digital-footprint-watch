@@ -1,37 +1,47 @@
 import json
 from dataclasses import dataclass
-from typing import List
+from typing import Dict
 
 @dataclass
-class ReputationAnalytics:
-    score: int
-    notifications: List[str]
+class Alert:
+    repo: str
+    file_path: str
+    secret: str
 
 class DigitalFootprintWatch:
-    def __init__(self):
-        self.analytics_settings = {
-            "notification_threshold": 50,
-            "notification_frequency": "daily"
+    def __init__(self, aws_iam_mock):
+        self.aws_iam_mock = aws_iam_mock
+
+    def rotate_secret(self, alert: Alert) -> Dict:
+        new_secret = self.aws_iam_mock.rotate_access_key(alert.secret)
+        return {
+            'new_secret': new_secret,
+            'commit_message': f'Updated secret in {alert.file_path}'
         }
-        self.reputation_score = 0
-        self.notifications = []
 
-    def update_reputation_score(self, score: int):
-        self.reputation_score = score
-        self.notifications = self.get_notifications()
+    def create_commit(self, alert: Alert, new_secret: str) -> str:
+        return f'Updated {alert.file_path} with new secret'
 
-    def get_reputation_analytics(self) -> ReputationAnalytics:
-        return ReputationAnalytics(self.reputation_score, self.get_notifications())
+    def resolve_alert(self, alert: Alert, new_secret: str) -> str:
+        return 'Resolved'
 
-    def customize_analytics_settings(self, notification_threshold: int, notification_frequency: str):
-        self.analytics_settings["notification_threshold"] = notification_threshold
-        self.analytics_settings["notification_frequency"] = notification_frequency
+class AWSIAMMock:
+    def rotate_access_key(self, secret: str) -> str:
+        return f'new_{secret}'
 
-    def get_analytics_notifications(self) -> List[str]:
-        return self.get_notifications()
+def main():
+    aws_iam_mock = AWSIAMMock()
+    digital_footprint_watch = DigitalFootprintWatch(aws_iam_mock)
+    alert = Alert('repo', 'file_path', 'secret')
+    result = digital_footprint_watch.rotate_secret(alert)
+    new_commit = digital_footprint_watch.create_commit(alert, result['new_secret'])
+    status = digital_footprint_watch.resolve_alert(alert, result['new_secret'])
+    print(json.dumps({
+        'new_secret': result['new_secret'],
+        'commit_message': result['commit_message'],
+        'new_commit': new_commit,
+        'status': status
+    }))
 
-    def get_notifications(self) -> List[str]:
-        notifications = []
-        if self.reputation_score < self.analytics_settings["notification_threshold"]:
-            notifications.append("Reputation score is low")
-        return notifications
+if __name__ == '__main__':
+    main()
