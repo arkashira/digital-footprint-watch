@@ -1,16 +1,19 @@
-# digital-footprint-watch
+# Digital Footprint Watch
 
-A minimal Python project that crawls public mentions of a developer's verified email address
-using Bing and Google Custom Search APIs. The crawler runs every 24 hours, de‑duplicates
-results, stores them with source URL, snippet, and timestamp, and retries failed
-requests up to three times.
+A unified dashboard UI for digital footprint monitoring.
 
 ## Features
 
-- **Scheduled crawling** – runs automatically every 24 hours.
-- **Multi‑source search** – queries both Bing and Google Custom Search APIs.
-- **Deduplication** – stores each unique URL only once.
-- **Retry logic** – retries failed API calls up to three times.
-- **In‑memory storage** – results are kept in a simple list (replaceable with a DB).
+* Alerts tab that groups AI-generated risk events by severity
+* Filtering by platform (GitHub, Twitter, etc.)
+* Remediate button for each alert
 
-## Installation
+## Requirements
+
+* Python 3.8+
+* No external dependencies required
+
+## Running the Tests
+
+* Install pytest using `pip install pytest`
+* Run the tests using `pytest tests`

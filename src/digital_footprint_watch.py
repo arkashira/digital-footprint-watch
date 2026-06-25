@@ -1,32 +1,39 @@
-import json
 from dataclasses import dataclass
+from datetime import datetime
+from enum import Enum
 from typing import List
 
+class Severity(Enum):
+    CRITICAL = 1
+    HIGH = 2
+    MEDIUM = 3
+    LOW = 4
+
 @dataclass
-class ReputationAnalytics:
-    score: int
-    notifications: List[str]
+class Alert:
+    description: str
+    timestamp: datetime
+    severity: Severity
+    platform: str
 
 class DigitalFootprintWatch:
     def __init__(self):
-        self.analytics_settings = {
-            "notification_frequency": "daily",
-            "score_threshold": 50
-        }
+        self.alerts = []
 
-    def get_reputation_analytics(self) -> ReputationAnalytics:
-        # Simulate analytics calculation
-        score = 75
-        notifications = ["Your reputation score is above average"]
-        return ReputationAnalytics(score, notifications)
+    def add_alert(self, alert: Alert):
+        self.alerts.append(alert)
 
-    def customize_analytics_settings(self, notification_frequency: str, score_threshold: int):
-        self.analytics_settings["notification_frequency"] = notification_frequency
-        self.analytics_settings["score_threshold"] = score_threshold
+    def get_alerts(self, platform: str = None):
+        if platform:
+            return [alert for alert in self.alerts if alert.platform == platform]
+        return self.alerts
 
-    def get_analytics_notifications(self) -> List[str]:
-        analytics = self.get_reputation_analytics()
-        if analytics.score > self.analytics_settings["score_threshold"]:
-            return analytics.notifications
-        else:
-            return []
+    def group_alerts_by_severity(self, platform: str = None):
+        alerts = self.get_alerts(platform)
+        grouped_alerts = {severity: [] for severity in Severity}
+        for alert in alerts:
+            grouped_alerts[alert.severity].append(alert)
+        return grouped_alerts
+
+    def filter_alerts(self, platform: str):
+        return [alert for alert in self.alerts if alert.platform == platform]
