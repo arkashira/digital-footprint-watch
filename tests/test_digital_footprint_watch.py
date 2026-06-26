@@ -1,48 +1,37 @@
-from datetime import datetime
-from digital_footprint_watch import DigitalFootprintWatch, Alert, Severity
-import pytest
+import json
+import os
+from unittest.mock import patch, MagicMock
+from digital_footprint_watch import UserProfile, authenticate_github, store_refresh_token, get_refresh_token, renew_access_token, sync_repositories
 
-def test_add_alert():
-    watch = DigitalFootprintWatch()
-    alert = Alert("Test alert", datetime.now(), Severity.CRITICAL, "GitHub")
-    watch.add_alert(alert)
-    assert len(watch.get_alerts()) == 1
+def test_authenticate_github():
+    with patch('builtins.input', return_value='dummy_code'):
+        with patch('urllib.request.urlopen') as mock_urlopen:
+            mock_response = MagicMock()
+            mock_response.read.return_value = json.dumps({"access_token": "dummy_token"}).encode('utf-8')
+            mock_urlopen.return_value = mock_response
+            access_token = authenticate_github()
+            assert access_token == "dummy_token"
 
-def test_get_alerts():
-    watch = DigitalFootprintWatch()
-    alert1 = Alert("Test alert 1", datetime.now(), Severity.CRITICAL, "GitHub")
-    alert2 = Alert("Test alert 2", datetime.now(), Severity.HIGH, "Twitter")
-    watch.add_alert(alert1)
-    watch.add_alert(alert2)
-    assert len(watch.get_alerts()) == 2
+def test_store_and_get_refresh_token():
+    store_refresh_token("dummy_refresh_token")
+    refresh_token = get_refresh_token()
+    assert refresh_token == "dummy_refresh_token"
+    os.remove("refresh_token.txt")
 
-def test_get_alerts_by_platform():
-    watch = DigitalFootprintWatch()
-    alert1 = Alert("Test alert 1", datetime.now(), Severity.CRITICAL, "GitHub")
-    alert2 = Alert("Test alert 2", datetime.now(), Severity.HIGH, "Twitter")
-    watch.add_alert(alert1)
-    watch.add_alert(alert2)
-    assert len(watch.get_alerts("GitHub")) == 1
+def test_renew_access_token():
+    with patch('urllib.request.urlopen') as mock_urlopen:
+        mock_response = MagicMock()
+        mock_response.read.return_value = json.dumps({"access_token": "new_dummy_token"}).encode('utf-8')
+        mock_urlopen.return_value = mock_response
+        new_access_token = renew_access_token("dummy_refresh_token")
+        assert new_access_token == "new_dummy_token"
 
-def test_group_alerts_by_severity():
-    watch = DigitalFootprintWatch()
-    alert1 = Alert("Test alert 1", datetime.now(), Severity.CRITICAL, "GitHub")
-    alert2 = Alert("Test alert 2", datetime.now(), Severity.HIGH, "Twitter")
-    alert3 = Alert("Test alert 3", datetime.now(), Severity.CRITICAL, "GitHub")
-    watch.add_alert(alert1)
-    watch.add_alert(alert2)
-    watch.add_alert(alert3)
-    grouped_alerts = watch.group_alerts_by_severity()
-    assert len(grouped_alerts[Severity.CRITICAL]) == 2
-    assert len(grouped_alerts[Severity.HIGH]) == 1
-
-def test_filter_alerts():
-    watch = DigitalFootprintWatch()
-    alert1 = Alert("Test alert 1", datetime.now(), Severity.CRITICAL, "GitHub")
-    alert2 = Alert("Test alert 2", datetime.now(), Severity.HIGH, "Twitter")
-    alert3 = Alert("Test alert 3", datetime.now(), Severity.CRITICAL, "GitHub")
-    watch.add_alert(alert1)
-    watch.add_alert(alert2)
-    watch.add_alert(alert3)
-    filtered_alerts = watch.filter_alerts("GitHub")
-    assert len(filtered_alerts) == 2
+def test_sync_repositories():
+    user_profile = UserProfile(linked_accounts={})
+    with patch('urllib.request.urlopen') as mock_urlopen:
+        mock_response = MagicMock()
+        mock_response.read.return_value = json.dumps([{"name": "repo1"}, {"name": "repo2"}]).encode('utf-8')
+        mock_urlopen.return_value = mock_response
+        sync_repositories("dummy_access_token", user_profile)
+        assert len(user_profile.linked_accounts) == 1
+        assert "GitHub" in user_profile.linked_accounts
